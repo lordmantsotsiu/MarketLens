@@ -1,7 +1,5 @@
-'use client';
-
 import React, { useEffect, useRef } from 'react';
-import { createChart, ColorType, IChartApi, ISeriesApi, AreaSeries } from 'lightweight-charts';
+import { createChart, ColorType, IChartApi } from 'lightweight-charts';
 import { ChartPoint } from '@/lib/types';
 
 interface MarketChartProps {
@@ -9,41 +7,39 @@ interface MarketChartProps {
   title?: string;
 }
 
-export const MarketChart: React.FC<MarketChartProps> = ({ data, title = 'Asset Performance' }) => {
+export const MarketChart: React.FC<MarketChartProps> = ({ data, title }) => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
-  const chartRef = useRef<IChartApi | null>(null);
 
   useEffect(() => {
-    if (!chartContainerRef.current || data.length === 0) return;
+    if (!chartContainerRef.current) return;
 
-    // Initialize HTML5 Canvas Chart
-    const chart = createChart(chartContainerRef.current, {
+    const chart: IChartApi = createChart(chartContainerRef.current, {
       layout: {
-        background: { type: ColorType.Solid, color: '#0f172a' }, // Slate 900
+        background: { type: ColorType.Solid, color: '#0f172a' },
         textColor: '#94a3b8',
       },
+      width: chartContainerRef.current.clientWidth,
+      height: 300,
       grid: {
         vertLines: { color: '#1e293b' },
         horzLines: { color: '#1e293b' },
       },
-      width: chartContainerRef.current.clientWidth,
-      height: 320,
     });
 
-    const newSeries = chart.addSeries(AreaSeries, {
+    // In lightweight-charts v4.x, area series are initialized via chart.addAreaSeries()
+    const areaSeries = chart.addAreaSeries({
       lineColor: '#3b82f6',
       topColor: 'rgba(59, 130, 246, 0.4)',
       bottomColor: 'rgba(59, 130, 246, 0.0)',
       lineWidth: 2,
     });
 
-    newSeries.setData(data);
+    areaSeries.setData(data as any);
     chart.timeScale().fitContent();
-    chartRef.current = chart;
 
     const handleResize = () => {
-      if (chartContainerRef.current && chartRef.current) {
-        chartRef.current.applyOptions({ width: chartContainerRef.current.clientWidth });
+      if (chartContainerRef.current) {
+        chart.applyOptions({ width: chartContainerRef.current.clientWidth });
       }
     };
 
@@ -56,9 +52,9 @@ export const MarketChart: React.FC<MarketChartProps> = ({ data, title = 'Asset P
   }, [data]);
 
   return (
-    <div className="p-4 bg-slate-900 rounded-xl border border-slate-800 shadow-md">
-      <h3 className="text-sm font-medium text-slate-400 mb-3">{title}</h3>
-      <div ref={chartContainerRef} className="w-full h-[320px]" />
+    <div className="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-lg">
+      {title && <h3 className="text-sm font-medium text-slate-400 mb-3">{title}</h3>}
+      <div ref={chartContainerRef} className="w-full h-[300px]" />
     </div>
   );
 };
